@@ -12,17 +12,19 @@ using std::vector;
  * This is scaffolding, do not modify
  */
 UKF::UKF() {
-  // if this is false, laser measurements will be ignored (except during init)
+  // switching flags
   use_laser_ = true;
-
-  // if this is false, radar measurements will be ignored (except during init)
   use_radar_ = true;
+  
+  // state and augmented state dimensions
+  n_x_ = 5;
+  n_aug_ = 7;
 
   // initial state vector
-  x_ = VectorXd(5);
+  x_ = VectorXd(n_x_);
 
   // initial covariance matrix
-  P_ = MatrixXd(5, 5);
+  P_ = MatrixXd(n_x_, n_x_);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   std_a_ = 30;
@@ -47,13 +49,20 @@ UKF::UKF() {
   std_radrd_ = 0.3;
   //DO NOT MODIFY measurement noise values above these are provided by the sensor manufacturer.
   
-  /**
-  TODO:
-
-  Complete the initialization. See ukf.h for other member properties.
-
-  Hint: one or more values initialized above might be wildly off...
-  */
+  // initially set to false, set to true in first call of ProcessMeasurement
+  is_initialized = false;
+ 
+  time_us_ = 0.0;
+  // Sigma point spreading parameter
+  lambda_ = 3 - n_x_;
+  // predicted sigma points matrix
+  Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
+  //create vector for weights
+  weights_ = VectorXd(2 * n_aug_ + 1);
+  // the current NIS for radar and laser
+  NIS_radar_ = 0.0;
+  NIS_laser_ = 0.0;
+  
 }
 
 UKF::~UKF() {}
