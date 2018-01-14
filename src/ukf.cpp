@@ -21,16 +21,16 @@ UKF::UKF() {
   n_aug_ = 7;
 
   // initial state vector
-  x_ = VectorXd(n_x_);
+  x_ = VectorXd::Constant(n_x_, 1);
 
   // initial covariance matrix
-  P_ = MatrixXd(n_x_, n_x_);
+  P_ = MatrixXd::Identity(n_x_, n_x_);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 30;
+  std_a_ = 0.1;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 30;
+  std_yawdd_ = 0.1;
   
   //DO NOT MODIFY measurement noise values below these are provided by the sensor manufacturer.
   // Laser measurement noise standard deviation position1 in m
@@ -72,12 +72,47 @@ UKF::~UKF() {}
  * either radar or laser.
  */
 void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
-  /**
-  TODO:
-
-  Complete this function! Make sure you switch between lidar and radar
-  measurements.
+  /* 
+  Initialization :
+    As stated in the comments, the sensor switch only works
+  after initialization  
   */
+  if (!is_initialized){
+      // x_ has been initialized with constant values in the constructor
+      // P has also been initialized in the constructor
+      
+      time_us_ = meas_package.timestamp_;
+      // Finally initializing the state vector with measurements
+      if (meas_package.sensor_type_ == MeasurementPackage::LASER){
+          x_(0) = meas_package.raw_measurements_(0);
+          x_(1) = meas_package.raw_measurements_(1);
+      }
+      else if (meas_package.sensor_type_ == MeasurementPackage::RADAR){
+          float rho = meas_package.raw_measurements_(0);
+          float phi = meas_package.raw_measurements_(1);
+          float rho_d = meas_package.raw_measurements_(2);
+          
+          x_(0) = rho * cos(phi);
+          x_(1) = rho * sin(phi);
+
+      }
+      is_initialized = true;
+      return;
+  }
+  
+  // Prediction + Update Steps
+  
+ float dt = (meas_package.timestamp_ - time_us_) / 1000000.0;
+ time_us_ = meas_package.timestamp_;
+ 
+ Prediction(dt);
+ 
+  if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
+      UpdateLidar(meas_package);
+  }
+  else if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
+      UpdateRadar(meas_package);
+  }
 }
 
 /**
