@@ -56,5 +56,5 @@ double Tools::normalize_angles(double angle){
   }else{
       angle = atan2(angle_s, angle_c);
   }
-  return angle
+  return angle;
 }

@@ -1,6 +1,7 @@
 #ifndef UKF_H
 #define UKF_H
 
+#include "tools.h"
 #include "measurement_package.h"
 #include "Eigen/Dense"
 #include <vector>
@@ -66,8 +67,20 @@ public:
 
   ///* Sigma point spreading parameter
   double lambda_;
+  
+  ///* the current NIS for radar
+  double NIS_radar_;
 
+  ///* the current NIS for laser
+  double NIS_laser_;
+  
+  ///* Radar measurement noise covariance matrix
+  MatrixXd R_radar_;
+  
+  ///* Lidar measurement noise covariance matrix
+  MatrixXd R_lidar_;
 
+  Tools tools_;
   /**
    * Constructor
    */
@@ -102,6 +115,20 @@ public:
    * @param meas_package The measurement at k+1
    */
   void UpdateRadar(MeasurementPackage meas_package);
+  
+  /**
+   * Generic method for creating the sigma points matrices
+   */
+  void GenerateSigmaPoints(MatrixXd P, VectorXd x, MatrixXd* Xsig_out);
+  
+  void MapSigmaPoints(MatrixXd Xin, MatrixXd* Xmap, double dt);
+  
+  void UpdateWeights();
+  void UpdateStateMean(VectorXd* x, MatrixXd Xsig);
+  void UpdateCovarianceMatrix(MatrixXd* Pout, MatrixXd Xsig_pred,VectorXd x, int x_ang_row, MatrixXd Zsig_pred, VectorXd z, int z_ang_row);
+  
+  double Update(VectorXd z, MatrixXd Zsig, int n_z, int z_ang_row, MatrixXd R);
+  
 };
 
 #endif /* UKF_H */

@@ -27,7 +27,7 @@ public:
   /**
   * A helper method to normalize angles to [-pi;pi] range
   */
-  double Tools::normalize_angles(double angle)
+  double normalize_angles(double angle);
 
 };
 
