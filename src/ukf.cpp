@@ -97,7 +97,6 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
           
           x_(0) = rho * cos(phi);
           x_(1) = rho * sin(phi);
-
       }
       is_initialized_ = true;
       return;
@@ -109,12 +108,14 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
  time_us_ = meas_package.timestamp_;
  
  Prediction(dt);
- 
+ std::cout << "Prediction..." << std::endl;
   if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
       UpdateLidar(meas_package);
+      std::cout << "Lidar..." << std::endl;
   }
   else if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
       UpdateRadar(meas_package);
+      std::cout << "Radar..." << std::endl;
   }
 }
 
@@ -138,12 +139,12 @@ void UKF::Prediction(double delta_t) {
   
   MatrixXd P_aug = MatrixXd::Constant(n_aug_, n_aug_, 0);
   P_aug.topLeftCorner(n_x_, n_x_) = P_;
-  P_aug(n_x_ + 1, n_x_ + 1) = std_a_*std_a_;
-  P_aug(n_x_ + 2, n_x_ + 2) = std_yawdd_*std_yawdd_;
+  P_aug(n_x_ + 0, n_x_ + 0) = std_a_*std_a_;
+  P_aug(n_x_ + 1, n_x_ + 1) = std_yawdd_*std_yawdd_;
   
   MatrixXd Xsig_aug = MatrixXd(n_aug_, 2 * n_aug_ + 1);
   GenerateSigmaPoints(P_aug, x_aug, &Xsig_aug);
-  MapSigmaPoints(x_aug, &Xsig_aug, delta_t);
+  MapSigmaPoints(Xsig_aug, &Xsig_pred_, delta_t);
   
   UpdateWeights();
   UpdateStateMean(&x_, Xsig_pred_);
@@ -245,7 +246,10 @@ void UKF::MapSigmaPoints(MatrixXd Xin, MatrixXd* Xmap, double dt) {
    MatrixXd Xout = MatrixXd::Constant(Xmap->rows(), Xmap->cols(), 0);
    
    if (Xout.cols() != Xin.cols() || Xout.rows() >= Xin.rows()){
-       std::cout << "Dimension mismatch" << std::endl;
+       std::cout << "ERROR : Dimension mismatch" << std::endl;
+       std::cout << "(" << Xin.rows() << ", " << Xin.cols() << ")" << std::endl;
+       std::cout << "(" << Xout.rows() << ", " << Xout.cols() << ")" << std::endl;
+       
        return;
    }
    
@@ -306,9 +310,10 @@ void UKF::UpdateStateMean(VectorXd* x, MatrixXd Xsig){
     
     xx.fill(0.0);
     
-    for (int i = 0; i < 2 * Xsig.cols() + 1; i++) {
+    for (int i = 0; i < Xsig.cols(); i++) {
         xx = xx + weights_(i) * Xsig.col(i);
     }   
+    
     *x = xx;
 }
 
@@ -316,7 +321,7 @@ void UKF::UpdateCovarianceMatrix(MatrixXd* Pout, MatrixXd Xsig_pred,VectorXd x, 
     
     MatrixXd P = MatrixXd::Constant(Pout->rows(), Pout->cols(), 0);
     
-    for (int i = 0; i < 2 * Xsig_pred.cols() + 1; i++) {
+    for (int i = 0; i < Xsig_pred.cols(); i++) {
         // Residuals computation
         VectorXd x_diff = Xsig_pred.col(i) - x; 
         if (x_ang_row > -1){ tools_.normalize_angles(x_diff(x_ang_row));}
@@ -352,5 +357,5 @@ double UKF::Update(VectorXd z, MatrixXd Zsig, int n_z, int z_ang_row, MatrixXd R
     x_ = x_ + K * z_diff;
     P_ = P_ - K*S*K.transpose();
       
-      return z_diff.transpose() * S.inverse() * z_diff;
+    return z_diff.transpose() * S.inverse() * z_diff;
 }
