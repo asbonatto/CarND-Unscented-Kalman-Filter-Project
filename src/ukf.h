@@ -123,7 +123,6 @@ public:
   
   void MapSigmaPoints(MatrixXd Xin, MatrixXd* Xmap, double dt);
   
-  void UpdateWeights();
   void UpdateStateMean(VectorXd* x, MatrixXd Xsig);
   void UpdateCovarianceMatrix(MatrixXd* Pout, MatrixXd Xsig_pred,VectorXd x, int x_ang_row, MatrixXd Zsig_pred, VectorXd z, int z_ang_row);
   
